@@ -1,0 +1,51 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  version: v2.12.0
+  constructs: v10.0.62
+
+env:
+  AWS_DEFAULT_REGION: us-east-2
+  CDK_DEFAULT_REGION: us-east-2
+  CDK_DEFAULT_ACCOUNT:
+    sh: aws sts get-caller-identity --query Account --output text
+
+includes:
+  helloFunction:
+    taskfile: ./hello_function/Taskfile.yaml
+    dir: ./hello_function
+
+tasks:
+  update:
+    dir: infrastructure
+    desc: install latest cdk and other modules
+    cmds:
+      - go get -d github.com/aws/aws-cdk-go/awscdk/v2@{{.version}}
+      - go get -d github.com/aws/constructs-go/constructs/v10@{{.constructs}}
+
+  list:
+    dir: infrastructure
+    desc: list stacks
+    cmds:
+      - npx cdk@{{.version}} ls
+
+  diff:
+    dir: infrastructure
+    desc: show stack differences
+    cmds:
+      - npx cdk@{{.version}} diff
+
+  deploy:
+    dir: infrastructure
+    desc: deploy stack without asking
+    deps: [helloFunction:build]
+    cmds:
+      - npx cdk@{{.version}} deploy --require-approval never
+
+  destroy:
+    dir: infrastructure
+    desc: delete stack without asking
+    cmds:
+      - npx cdk@{{.version}} destroy --force

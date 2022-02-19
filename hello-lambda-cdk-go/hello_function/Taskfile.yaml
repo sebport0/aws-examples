@@ -1,0 +1,29 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  build:
+    desc: Build go. Zip the build output
+    cmds:
+      - env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../dist/main main.go
+      - chmod +x ../dist/main
+      - cd ../dist && zip main.zip main
+    sources:
+      - ./*.go
+      - main/*.go
+      - Taskfile.yml
+    generates:
+      - ../dist/main
+    silent: true
+
+  lambda-deploy:
+    desc: Deploy lambda and nothing else
+    deps: [build]
+    cmds:
+      - aws lambda update-function-code --function-name hello-go-lambda --zip-file fileb://../dist/main.zip
+
+  test-app:
+    desc: Run go test
+    cmds:
+      - go test
