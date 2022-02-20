@@ -3,6 +3,11 @@
 version: "3"
 
 tasks:
+  update:
+    desc: Install go dependencies.
+    cmds:
+      - go mod tidy
+
   build:
     desc: Build go. Zip the build output
     cmds:
