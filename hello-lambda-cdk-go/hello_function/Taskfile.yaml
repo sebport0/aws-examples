@@ -9,8 +9,9 @@ tasks:
       - go mod tidy
 
   build:
-    desc: Build go. Zip the build output
+    desc: Build the function. Zip the build output and save it to the dist folder.
     cmds:
+      - mkdir -p ../dist
       - env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../dist/main main.go
       - chmod +x ../dist/main
       - cd ../dist && zip main.zip main
