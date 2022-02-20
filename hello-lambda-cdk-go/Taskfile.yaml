@@ -20,32 +20,33 @@ includes:
 tasks:
   update:
     dir: infrastructure
-    desc: install latest cdk and other modules
+    desc: Install latest cdk and other modules.
+    deps: [helloFunction:update]
     cmds:
       - go get -d github.com/aws/aws-cdk-go/awscdk/v2@{{.version}}
       - go get -d github.com/aws/constructs-go/constructs/v10@{{.constructs}}
 
   list:
     dir: infrastructure
-    desc: list stacks
+    desc: List stacks.
     cmds:
       - npx cdk@{{.version}} ls
 
   diff:
     dir: infrastructure
-    desc: show stack differences
+    desc: Show stack differences.
     cmds:
       - npx cdk@{{.version}} diff
 
   deploy:
     dir: infrastructure
-    desc: deploy stack without asking
+    desc: Deploy stack without asking.
     deps: [helloFunction:build]
     cmds:
       - npx cdk@{{.version}} deploy --require-approval never
 
   destroy:
     dir: infrastructure
-    desc: delete stack without asking
+    desc: Delete stack without asking.
     cmds:
       - npx cdk@{{.version}} destroy --force
