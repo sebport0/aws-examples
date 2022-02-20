@@ -1,2 +1,3 @@
 **.task**
 **cdk.out**
+**/infrastructure/cdk.out/* 
