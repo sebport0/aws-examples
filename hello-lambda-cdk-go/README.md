@@ -47,7 +47,7 @@ Also, you can run `task -ls` to obtain a list of all the available tasks.
 
 ## TODO
 
-[ ] Lambda & infrastructure tests.
+- [ ] Lambda & infrastructure tests.
 
 
 
