@@ -5,8 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
+	dynamodb "github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
+	iam "github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	lambda "github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	logs "github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -18,14 +21,48 @@ type HelloLambdaCdkGoStackProps struct {
 	awscdk.StackProps
 }
 
-func NewHelloLambdaCdkGoStack(scope constructs.Construct, id string, props *HelloLambdaCdkGoStackProps) awscdk.Stack {
+func NewHelloLambdaCdkGoStack(
+	scope constructs.Construct, id string, props *HelloLambdaCdkGoStackProps,
+) awscdk.Stack {
 	var sprops awscdk.StackProps
 	if props != nil {
 		sprops = props.StackProps
 	}
 	stack := awscdk.NewStack(scope, &id, &sprops)
 
-	// The code that defines your stack goes here
+	// ===== DynamoDB table =====
+	tableName := "Messages"
+	tableId := "DynamoDBTable"
+	partitionKeyName := "ID"
+
+	messagesTable := dynamodb.NewTable(
+		stack,
+		aws.String(tableId),
+		&dynamodb.TableProps{
+			TableName: aws.String(tableName),
+			PartitionKey: &dynamodb.Attribute{
+				Name: aws.String(partitionKeyName),
+				Type: dynamodb.AttributeType_STRING,
+			},
+			BillingMode: dynamodb.BillingMode_PAY_PER_REQUEST,
+			TableClass:  dynamodb.TableClass_STANDARD,
+		},
+	)
+
+	// ===== IAM =====
+	dynamodbActions := aws.StringSlice([]string{
+		"dynamodb:PutItem",
+		"dynamodb:UpdateItem",
+		"dynamodb:GetItem",
+	})
+	resources := []*string{messagesTable.TableArn()}
+	lambdaMessagesTableStatement := iam.NewPolicyStatement(&iam.PolicyStatementProps{
+		Effect:    iam.Effect_ALLOW,
+		Actions:   &dynamodbActions,
+		Resources: &resources,
+	})
+
+	// ===== Lambda =====
 	path, err := os.Getwd()
 	if err != nil {
 		log.Println(err)
@@ -33,7 +70,7 @@ func NewHelloLambdaCdkGoStack(scope constructs.Construct, id string, props *Hell
 	lambdaPath := filepath.Join(path, "../dist/main.zip")
 
 	lambdaName := "hello-go-lambda"
-	lambda.NewFunction(
+	helloLambda := lambda.NewFunction(
 		stack,
 		aws.String(lambdaName),
 		&lambda.FunctionProps{
@@ -45,8 +82,10 @@ func NewHelloLambdaCdkGoStack(scope constructs.Construct, id string, props *Hell
 			Code:         lambda.Code_FromAsset(&lambdaPath, &awss3assets.AssetOptions{}),
 			Handler:      aws.String("main"),
 			Runtime:      lambda.Runtime_GO_1_X(),
+			Environment:  &map[string]*string{"TABLE": aws.String(tableName)},
 		},
 	)
+	helloLambda.AddToRolePolicy(lambdaMessagesTableStatement)
 
 	return stack
 }
