@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  lambda-structured-logs
+
+  Silly example that shows how to do structure logging.
+
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: python3.8
+    Architectures:
+      - arm64
+
+Resources:
+  ProgressLoggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: progress_logger/
+      Handler: app.lambda_handler
+
+  LatencyLoggerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: latency_logger/
+      Handler: app.lambda_handler
+
+Outputs:
+  ProgressLoggerFunction:
+    Description: "ProgressLoggerFunction ARN"
+    Value: !GetAtt ProgressLoggerFunction.Arn
+  LatencyLoggerFunction:
+    Description: "LatencyLoggerFunction ARN"
+    Value: !GetAtt LatencyLoggerFunction.Arn
+# TODO: function to query average latency.
